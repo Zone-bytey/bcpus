@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Practical Projects</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Advanced Block Chain Technology</h1>
+        <nav>
+            <ul>
+                <li><a href="#practical1">Practical 1</a></li>
+                <li><a href="#practical2">Practical 2</a></li>
+                <li><a href="#practical3">Practical 3</a></li>
+                <li><a href="#practical4">Practical 4</a></li>
+            </ul>
+        </nav>
+        <div class="project" id="prectical1">
+            <h2>Practical 1: Implement Direct Acyclic Graph</h2>
+            <p>A brief description of your project.</p>
+            <div class="code-container">
+                <button class="copy-button">Copy</button>
+                <pre><code class="language-python">
+Implementing a Direct Acyclic Graph (DAG) involves creating a data structure that represents a graph where edges have a direction and there are no cycles. This structure is commonly used in blockchain technology to allow for more efficient transaction processing and scalability. Here, I'll provide a simple implementation of a DAG in Python:
+
+```python
+class DAGNode:
+    def __init__(self, value):
+        self.value = value
+        self.parents = []
+        self.children = []
+
+class DAG:
+    def __init__(self):
+        self.nodes = {}
+
+    def add_node(self, value):
+        if value not in self.nodes:
+            node = DAGNode(value)
+            self.nodes[value] = node
+        else:
+            print("Node with value {} already exists.".format(value))
+
+    def add_edge(self, parent_value, child_value):
+        if parent_value in self.nodes and child_value in self.nodes:
+            parent_node = self.nodes[parent_value]
+            child_node = self.nodes[child_value]
+
+            parent_node.children.append(child_node)
+            child_node.parents.append(parent_node)
+        else:
+            print("Parent or child node does not exist.")
+
+    def topological_sort(self):
+        sorted_nodes = []
+        visited = set()
+
+        def dfs(node):
+            if node in visited:
+                return
+            visited.add(node)
+            for child in node.children:
+                dfs(child)
+            sorted_nodes.append(node)
+
+        for node in self.nodes.values():
+            dfs(node)
+
+        return [node.value for node in reversed(sorted_nodes)]
+
+# Example usage:
+dag = DAG()
+dag.add_node(1)
+dag.add_node(2)
+dag.add_node(3)
+dag.add_edge(1, 2)
+dag.add_edge(1, 3)
+dag.add_edge(2, 3)
+
+print("Topological sorting of DAG nodes:", dag.topological_sort())
+```
+
+This code sets up a basic DAG data structure with nodes and edges. Nodes are instances of the `DAGNode` class, which contains a value and references to its parents and children. The `DAG` class manages these nodes and provides methods to add nodes, add directed edges between nodes, and perform a topological sort to get a valid ordering of the nodes.
+        </code></pre>
+            </div>
+        </div>
+
+        <div class="project" id="practical2">
+            <h2>Practical 2: Creating a channel in Hyperledger Fabric.</h2>
+            <p>A brief description of your project.</p>
+            <div class="code-container">
+                <button class="copy-button">Copy</button>
+                <pre><code class="language-python">
+Creating a channel in Hyperledger Fabric.
+Creating a channel in Hyperledger Fabric involves several steps. Here's a guide to help you through the process:
+Prerequisites
+1.	Hyperledger Fabric binaries: Make sure you have the required binaries and Docker images.
+2.	Crypto-material: Generate cryptographic material using the cryptogen tool or use the Fabric CA to generate identities.
+3.	Configuration files: Prepare the configtx.yaml file for channel configuration.
+Steps to Create a Channel
+1. Set Up the Environment
+Ensure your environment variables are set up correctly. These typically include paths to the crypto material and configuration files.
+sh
+Copy code
+export FABRIC_CFG_PATH=$PWD
+export CHANNEL_NAME=mychannel
+2. Generate the Genesis Block
+Using the configtxgen tool, generate the genesis block for the orderer.
+sh
+Copy code
+configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./channel-artifacts/genesis.block
+3. Create the Channel Configuration Transaction
+Generate the channel configuration transaction.
+sh
+Copy code
+configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID $CHANNEL_NAME
+4. Define Anchor Peers
+Generate the anchor peer updates for each organization.
+sh
+Copy code
+configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org1MSP
+configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
+5. Start the Network
+Ensure your Docker containers are up and running for the orderer and peer nodes.
+sh
+Copy code
+docker-compose -f docker-compose-cli.yaml up -d
+6. Create the Channel
+Use the CLI container to create the channel.
+sh
+Copy code
+docker exec -it cli bash
+peer channel create -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/channel.tx --outputBlock ./channel-artifacts/$CHANNEL_NAME.block
+7. Join Peers to the Channel
+Each peer needs to join the newly created channel.
+sh
+Copy code
+peer channel join -b ./channel-artifacts/$CHANNEL_NAME.block
+Repeat the above command for each peer in the network.
+8. Update Anchor Peers
+Update the anchor peers for each organization.
+sh
+Copy code
+peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/Org1MSPanchors.tx
+peer channel update -o orderer.example.com:7050 -c $CHANNEL_NAME -f ./channel-artifacts/Org2MSPanchors.tx
+Example configtx.yaml Configuration
+Here’s a snippet of what the configtx.yaml file might look like:
+yaml
+Copy code
+---
+Organizations:
+    - &Org1
+        Name: Org1MSP
+        ID: Org1MSP
+        MSPDir: crypto-config/peerOrganizations/org1.example.com/msp
+        AnchorPeers:
+            - Host: peer0.org1.example.com
+              Port: 7051
+
+    - &Org2
+        Name: Org2MSP
+        ID: Org2MSP
+        MSPDir: crypto-config/peerOrganizations/org2.example.com/msp
+        AnchorPeers:
+            - Host: peer0.org2.example.com
+              Port: 8051
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+    Application: &ApplicationCapabilities
+        V2_0: true
+
+Application: &ApplicationDefaults
+    Organizations:
+
+Orderer: &OrdererDefaults
+    OrdererType: etcdraft
+    Addresses:
+        - orderer.example.com:7050
+    Organizations:
+
+Channel: &ChannelDefaults
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+    TwoOrgsOrdererGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *Org1
+                - *Org2
+        Consortiums:
+            SampleConsortium:
+                Organizations:
+                    - *Org1
+                    - *Org2
+
+    TwoOrgsChannel:
+        Consortium: SampleConsortium
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *Org1
+                - *Org2
+            Capabilities:
+                <<: *ApplicationCapabilities
+By following these steps and using the provided example configuration, you should be able to create and set up a channel in Hyperledger Fabric successfully.
+        </code></pre>
+            </div>
+        </div>
+
+        <div class="project" id="practical3"> 
+            <h2>Practical 3: Smart Contract creation in channel</h2>
+            <p>A brief description of your project.</p>
+            <div class="code-container">
+                <button class="copy-button">Copy</button>
+                <pre><code class="language-python">
+Creating a smart contract (also known as a chaincode) in Hyperledger Fabric involves several steps. Here's a guide to help you through the process:
+Prerequisites
+1.	Hyperledger Fabric binaries and Docker images: Ensure you have these installed and configured.
+2.	Peer and orderer nodes: Ensure your network is running, with channels created and peers joined to the channels.
+3.	CLI container: This will be used to package, install, approve, and commit the chaincode.
+Steps to Create and Deploy a Smart Contract
+1. Write the Smart Contract
+Create a directory for your chaincode, and write your smart contract in the language of your choice (e.g., Go, JavaScript, or Java).
+For example, create a directory named mychaincode and a file mychaincode.go for Go language:
+go
+Copy code
+package main
+
+import (
+    "fmt"
+    "github.com/hyperledger/fabric-contract-api-go/contractapi"
+)
+
+type SmartContract struct {
+    contractapi.Contract
+}
+
+func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+    // Initialization logic
+    return nil
+}
+
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, assetID string, value string) error {
+    // Asset creation logic
+    return ctx.GetStub().PutState(assetID, []byte(value))
+}
+
+func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, assetID string) (string, error) {
+    // Asset reading logic
+    value, err := ctx.GetStub().GetState(assetID)
+    if err != nil {
+        return "", fmt.Errorf("failed to read asset: %v", err)
+    }
+    if value == nil {
+        return "", fmt.Errorf("asset not found: %s", assetID)
+    }
+    return string(value), nil
+}
+
+func main() {
+    chaincode, err := contractapi.NewChaincode(&SmartContract{})
+    if err != nil {
+        fmt.Printf("Error creating chaincode: %v\n", err)
+        return
+    }
+
+    if err := chaincode.Start(); err != nil {
+        fmt.Printf("Error starting chaincode: %v\n", err)
+    }
+}
+2. Package the Chaincode
+Use the CLI container to package the chaincode.
+sh
+Copy code
+docker exec -it cli bash
+peer lifecycle chaincode package mychaincode.tar.gz --path /opt/gopath/src/github.com/hyperledger/fabric/peer/mychaincode --lang golang --label mychaincode_1
+3. Install the Chaincode
+Install the chaincode on the peers.
+sh
+Copy code
+peer lifecycle chaincode install mychaincode.tar.gz
+Repeat the above command for each peer in the network.
+4. Query Installed Chaincode
+Query the installed chaincode to get the package ID.
+sh
+Copy code
+peer lifecycle chaincode queryinstalled
+Note the package ID from the output, which will be used in the next steps.
+5. Approve the Chaincode Definition for Your Organization
+Approve the chaincode definition from each organization.
+sh
+Copy code
+peer lifecycle chaincode approveformyorg --channelID $CHANNEL_NAME --name mychaincode --version 1.0 --package-id <PACKAGE_ID> --sequence 1 --init-required --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --waitForEvent
+6. Check Commit Readiness
+Check the commit readiness of the chaincode definition.
+sh
+Copy code
+peer lifecycle chaincode checkcommitreadiness --channelID $CHANNEL_NAME --name mychaincode --version 1.0 --sequence 1 --init-required --output json
+Ensure that all organizations have approved the chaincode definition.
+7. Commit the Chaincode Definition to the Channel
+Commit the chaincode definition.
+sh
+Copy code
+peer lifecycle chaincode commit -o orderer.example.com:7050 --channelID $CHANNEL_NAME --name mychaincode --version 1.0 --sequence 1 --init-required --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+8. Invoke the Chaincode
+If your chaincode requires initialization, invoke the Init function.
+sh
+Copy code
+peer chaincode invoke -o orderer.example.com:7050 --isInit --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C $CHANNEL_NAME -n mychaincode --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["InitLedger"]}'
+Summary
+1.	Write the smart contract: Create and implement the chaincode.
+2.	Package the chaincode: Use the CLI to package the chaincode.
+3.	Install the chaincode: Install the packaged chaincode on all peers.
+4.	Approve the chaincode: Approve the chaincode definition for each organization.
+5.	Commit the chaincode: Commit the approved chaincode to the channel.
+6.	Invoke the chaincode: Initialize and invoke the chaincode functions as needed.
+By following these steps, you can successfully create, deploy, and interact with a smart contract in a Hyperledger Fabric channel.
+        </code></pre>
+            </div>
+        </div>
+
+        <div class="project" id="practical4">
+            <h2>Practical 4: Balance transfer between blocks</h2>
+            <p>A brief description of your project.</p>
+            <div class="code-container">
+                <button class="copy-button">Copy</button>
+                <pre><code class="language-python">
+Balance transfer between blocks 
+In Hyperledger Fabric, transferring balances between blocks can be achieved through smart contracts (chaincode). This process typically involves defining and implementing the necessary chaincode functions for managing accounts and transferring balances.
+Here's a step-by-step guide to creating a simple balance transfer smart contract in Hyperledger Fabric:
+Step 1: Define the Smart Contract
+Create a new directory for your chaincode and a Go file (e.g., balance_transfer.go). Here, we'll define a smart contract that allows balance transfers between accounts.
+go
+Copy code
+package main
+
+import (
+    "fmt"
+    "strconv"
+    "github.com/hyperledger/fabric-contract-api-go/contractapi"
+)
+
+type SmartContract struct {
+    contractapi.Contract
+}
+
+type Account struct {
+    Balance int `json:"balance"`
+}
+
+// InitLedger initializes the ledger with some accounts
+func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+    accounts := []Account{
+        {Balance: 100},
+        {Balance: 200},
+        {Balance: 300},
+    }
+
+    for i, account := range accounts {
+        accountAsBytes, _ := json.Marshal(account)
+        err := ctx.GetStub().PutState("ACCOUNT"+strconv.Itoa(i), accountAsBytes)
+        if err != nil {
+            return fmt.Errorf("failed to put to world state. %s", err.Error())
+        }
+    }
+
+    return nil
+}
+
+// CreateAccount creates a new account with a specified balance
+func (s *SmartContract) CreateAccount(ctx contractapi.TransactionContextInterface, accountID string, balance int) error {
+    account := Account{Balance: balance}
+    accountAsBytes, _ := json.Marshal(account)
+
+    return ctx.GetStub().PutState(accountID, accountAsBytes)
+}
+
+// QueryAccount returns the balance of a specified account
+func (s *SmartContract) QueryAccount(ctx contractapi.TransactionContextInterface, accountID string) (int, error) {
+    accountAsBytes, err := ctx.GetStub().GetState(accountID)
+    if err != nil {
+        return 0, fmt.Errorf("failed to read from world state. %s", err.Error())
+    }
+    if accountAsBytes == nil {
+        return 0, fmt.Errorf("account does not exist")
+    }
+
+    account := new(Account)
+    _ = json.Unmarshal(accountAsBytes, account)
+
+    return account.Balance, nil
+}
+
+// TransferBalance transfers balance from one account to another
+func (s *SmartContract) TransferBalance(ctx contractapi.TransactionContextInterface, fromAccountID string, toAccountID string, amount int) error {
+    fromAccountAsBytes, err := ctx.GetStub().GetState(fromAccountID)
+    if err != nil {
+        return fmt.Errorf("failed to read from world state. %s", err.Error())
+    }
+    if fromAccountAsBytes == nil {
+        return fmt.Errorf("source account does not exist")
+    }
+
+    toAccountAsBytes, err := ctx.GetStub().GetState(toAccountID)
+    if err != nil {
+        return fmt.Errorf("failed to read from world state. %s", err.Error())
+    }
+    if toAccountAsBytes == nil {
+        return fmt.Errorf("destination account does not exist")
+    }
+
+    fromAccount := new(Account)
+    toAccount := new(Account)
+    _ = json.Unmarshal(fromAccountAsBytes, fromAccount)
+    _ = json.Unmarshal(toAccountAsBytes, toAccount)
+
+    if fromAccount.Balance < amount {
+        return fmt.Errorf("insufficient funds")
+    }
+
+    fromAccount.Balance -= amount
+    toAccount.Balance += amount
+
+    fromAccountAsBytes, _ = json.Marshal(fromAccount)
+    toAccountAsBytes, _ = json.Marshal(toAccount)
+
+    err = ctx.GetStub().PutState(fromAccountID, fromAccountAsBytes)
+    if err != nil {
+        return err
+    }
+
+    err = ctx.GetStub().PutState(toAccountID, toAccountAsBytes)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func main() {
+    chaincode, err := contractapi.NewChaincode(&SmartContract{})
+    if err != nil {
+        fmt.Printf("Error create fabcar chaincode: %s", err.Error())
+        return
+    }
+
+    if err := chaincode.Start(); err != nil {
+        fmt.Printf("Error starting fabcar chaincode: %s", err.Error())
+    }
+}
+Step 2: Package and Install the Chaincode
+Package the chaincode:
+sh
+Copy code
+peer lifecycle chaincode package balance_transfer.tar.gz --path /opt/gopath/src/github.com/hyperledger/fabric/peer/balance_transfer --lang golang --label balance_transfer_1
+Install the chaincode on the peers:
+sh
+Copy code
+peer lifecycle chaincode install balance_transfer.tar.gz
+Step 3: Approve the Chaincode Definition
+Approve the chaincode definition for your organization:
+sh
+Copy code
+peer lifecycle chaincode approveformyorg --channelID mychannel --name balance_transfer --version 1.0 --package-id <PACKAGE_ID> --sequence 1 --init-required
+Step 4: Commit the Chaincode Definition
+Commit the chaincode definition to the channel:
+sh
+Copy code
+peer lifecycle chaincode commit -o orderer.example.com:7050 --channelID mychannel --name balance_transfer --version 1.0 --sequence 1 --init-required --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+Step 5: Initialize the Chaincode
+If your chaincode requires initialization, invoke the InitLedger function:
+sh
+Copy code
+peer chaincode invoke -o orderer.example.com:7050 --isInit --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n balance_transfer --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["InitLedger"]}'
+Step 6: Invoke the Chaincode Functions
+Now you can use the CLI or an application to invoke the CreateAccount, QueryAccount, and TransferBalance functions.
+Create accounts:
+sh
+Copy code
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n balance_transfer --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["CreateAccount", "ACCOUNT1", "100"]}'
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n balance_transfer --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["CreateAccount", "ACCOUNT2", "200"]}'
+Transfer balance:
+sh
+Copy code
+peer chaincode invoke -o orderer.example.com:7050 --tls --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem -C mychannel -n balance_transfer --peerAddresses peer0.org1.example.com:7051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt --peerAddresses peer0.org2.example.com:8051 --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt -c '{"Args":["TransferBalance", "ACCOUNT1", "ACCOUNT2", "50"]}'
+Query account balances:
+sh
+Copy code
+peer chaincode query -C mychannel -n balance_transfer -c '{"Args":["QueryAccount", "ACCOUNT1"]}'
+peer chaincode query -C mychannel -n balance_transfer -c '{"Args":["QueryAccount", "ACCOUNT2"]}'
+By following these steps, you can implement a balance transfer smart contract in Hyperledger Fabric, allowing for balance transfers between accounts on the blockchain.
+        </code></pre>
+            </div>
+        </div>
+
+        
+
+    <button id="backToTop" onclick="scrollToTop()">Back to Top</button>
+    <script src="script.js"></script>
+</body>
+
+</html>
